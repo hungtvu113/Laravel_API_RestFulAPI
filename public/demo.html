@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Blog RESTful API Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #posts {
+            list-style: none;
+            padding: 0;
+        }
+        #posts li {
+            background: #f4f4f4;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .delete-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mini Blog RESTful API Demo</h1>
+    
+    <div>
+        <input type="text" id="title" placeholder="Tiêu đề">
+        <textarea id="content" placeholder="Nội dung" rows="4"></textarea>
+        
+        <button onclick="addPost()">Thêm</button>
+        <button onclick="loadPosts()">Tải danh sách</button>
+    </div>
+    
+    <h2>Danh sách bài viết</h2>
+    <ul id="posts"></ul>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api/posts';
+
+        // Lấy danh sách dữ liệu (GET)
+        async function loadPosts() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+
+                let html = '';
+                data.data.forEach(post => {
+                    html += `
+                        <li>
+                            <strong>${post.title}</strong>
+                            <p>${post.content}</p>
+                            <small>Ngày tạo: ${post.created_at}</small>
+                            <br>
+                            <button class="delete-btn" onclick="deletePost(${post.id})">Xóa</button>
+                        </li>
+                    `;
+                });
+
+                document.getElementById('posts').innerHTML = html || '<li>Chưa có bài viết nào</li>';
+            } catch (error) {
+                console.error('Lỗi khi tải danh sách:', error);
+                alert('Không thể tải danh sách bài viết. Hãy đảm bảo server đang chạy!');
+            }
+        }
+
+        // Tạo mới dữ liệu (POST)
+        async function addPost() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            if (!title || !content) {
+                alert('Vui lòng nhập đầy đủ tiêu đề và nội dung!');
+                return;
+            }
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, content })
+                });
+
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
+                
+                alert('Đã thêm bài viết thành công!');
+                loadPosts();
+            } catch (error) {
+                console.error('Lỗi khi thêm bài viết:', error);
+                alert('Không thể thêm bài viết!');
+            }
+        }
+
+        // Xóa dữ liệu (DELETE)
+        async function deletePost(id) {
+            if (!confirm('Bạn có chắc muốn xóa bài viết này?')) {
+                return;
+            }
+
+            try {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                alert('Đã xóa bài viết thành công!');
+                loadPosts();
+            } catch (error) {
+                console.error('Lỗi khi xóa bài viết:', error);
+                alert('Không thể xóa bài viết!');
+            }
+        }
+
+        // Tự động tải danh sách khi mở trang
+        loadPosts();
+    </script>
+</body>
+</html>
